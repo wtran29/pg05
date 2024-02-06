@@ -73,6 +73,7 @@ func AddUser(d Userdata) int {
 	insertStatement := `INSERT INTO "users" ("username") VALUES ($1) RETURNING "id"`
 	// var userID int
 	err = db.QueryRow(insertStatement, d.Username).Scan(&userID)
+	fmt.Println("UserID after insertion:", userID) // Add this line for debugging
 	if err != nil {
 		fmt.Println(err)
 		return -1
