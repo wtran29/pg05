@@ -70,7 +70,7 @@ func AddUser(d Userdata) int {
 	defer db.Close()
 	user := exists(d.Username)
 	if user != -1 {
-		fmt.Println("User already exists:", d.Username)
+		fmt.Println("User already exists:", Username)
 		return -1
 	}
 	insertStatement := `INSERT INTO "users" ("username") VALUES ($1) RETURNING "id"`
