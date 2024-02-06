@@ -43,20 +43,17 @@ func exists(username string) int {
 	}
 	defer db.Close()
 
-	userID := -1
-	statement := fmt.Sprintf(`SELECT "id" FROM "users" WHERE username = '%s'`, username)
-	rows, err := db.Query(statement)
+	var userID int
+	statement := `SELECT "id" FROM "users" WHERE username = $1`
+	err = db.QueryRow(statement, username).Scan(&userID)
 
-	for rows.Next() {
-		var id int
-		err = rows.Scan(&id)
-		if err != nil {
-			fmt.Println("Scan", err)
-			return -1
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return -1 // User does not exist
 		}
-		userID = id
+		fmt.Println("Query", err)
+		return -1 // Return -1 for any other error
 	}
-	defer rows.Close()
 	return userID
 }
 
