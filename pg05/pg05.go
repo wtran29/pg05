@@ -36,6 +36,7 @@ func openConnection() (*sql.DB, error) {
 
 func exists(username string) int {
 	username = strings.ToLower(username)
+
 	db, err := openConnection()
 	if err != nil {
 		fmt.Println(err)
@@ -43,47 +44,59 @@ func exists(username string) int {
 	}
 	defer db.Close()
 
-	var userID int
-	statement := `SELECT "id" FROM "users" WHERE LOWER(username) = $1`
-	err = db.QueryRow(statement, username).Scan(&userID)
+	userID := -1
+	statement := fmt.Sprintf(`SELECT "id" FROM "users" where username = '%s'`, username)
+	rows, _ := db.Query(statement)
 
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return -1 // User does not exist
+	for rows.Next() {
+		var id int
+		err = rows.Scan(&id)
+		if err != nil {
+			fmt.Println("Scan", err)
+			return -1
 		}
-		fmt.Println("Query", err)
-		return -1 // Return -1 for any other error
+		userID = id
 	}
+	defer rows.Close()
 	return userID
 }
 
 func AddUser(d Userdata) int {
 	d.Username = strings.ToLower(d.Username)
+
 	db, err := openConnection()
 	if err != nil {
 		fmt.Println(err)
 		return -1
 	}
 	defer db.Close()
+
 	userID := exists(d.Username)
 	if userID != -1 {
-		fmt.Println("User already exists:", d.Username)
+		fmt.Println("User already exists:", Username)
 		return -1
 	}
-	insertStatement := `INSERT INTO "users" ("username") VALUES ($1) RETURNING "id"`
-	// var userID int
-	err = db.QueryRow(insertStatement, d.Username).Scan(&userID)
-	fmt.Println("UserID after insertion:", userID) // Add this line for debugging
+
+	insertStatement := `insert into "users" ("username") values ($1)`
+	_, err = db.Exec(insertStatement, d.Username)
 	if err != nil {
 		fmt.Println(err)
 		return -1
 	}
-	insertStatement = `INSERT INTO "userdata" ("userid", "name", "surname", "description") VALUES ($1, $2, $3, $4)`
+
+	userID = exists(d.Username)
+	if userID == -1 {
+		return userID
+	}
+
+	insertStatement = `insert into "userdata" ("userid", "name", "surname", "description")
+	values ($1, $2, $3, $4)`
 	_, err = db.Exec(insertStatement, userID, d.Name, d.Surname, d.Description)
 	if err != nil {
 		fmt.Println("db.Exec()", err)
 		return -1
 	}
+
 	return userID
 }
 
@@ -96,6 +109,9 @@ func DeleteUser(id int) error {
 
 	statement := fmt.Sprintf(`SELECT "username" FROM "users" WHERE id = %d`, id)
 	rows, err := db.Query(statement)
+	if err != nil {
+		return err
+	}
 
 	var username string
 	for rows.Next() {
@@ -107,7 +123,7 @@ func DeleteUser(id int) error {
 	defer rows.Close()
 
 	if exists(username) != id {
-		return fmt.Errorf("User with ID %d does not exist", id)
+		return fmt.Errorf("user with ID %d does not exist", id)
 	}
 	deleteStatement := `DELETE FROM "userdata" WHERE userid=$1`
 	_, err = db.Exec(deleteStatement, id)
@@ -159,7 +175,7 @@ func UpdateUser(d Userdata) error {
 	defer db.Close()
 	userID := exists(d.Username)
 	if userID == -1 {
-		return errors.New("User does not exist")
+		return errors.New("user does not exist")
 	}
 	// d.ID = userID
 	updateStatement := `UPDATE "userdata" SET "name"=$1, "surname"=$2, "description"=$3 WHERE "userid"=$4`
