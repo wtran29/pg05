@@ -68,13 +68,14 @@ func AddUser(d Userdata) int {
 		return -1
 	}
 	defer db.Close()
-	userID := exists(d.Username)
-	if userID != -1 {
-		fmt.Println("User already exists:", Username)
+	user := exists(d.Username)
+	if user != -1 {
+		fmt.Println("User already exists:", d.Username)
 		return -1
 	}
-	insertStatement := `INSERT INTO "users" ("username") VALUES ($1)`
-	_, err = db.Exec(insertStatement, d.Username)
+	insertStatement := `INSERT INTO "users" ("username") VALUES ($1) RETURNING "id"`
+	var userID int
+	err = db.QueryRow(insertStatement, d.Username).Scan(&userID)
 	if err != nil {
 		fmt.Println(err)
 		return -1
