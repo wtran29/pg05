@@ -44,7 +44,7 @@ func exists(username string) int {
 	defer db.Close()
 
 	var userID int
-	statement := `SELECT "id" FROM "users" WHERE username = $1`
+	statement := `SELECT "id" FROM "users" WHERE LOWER(username) = $1`
 	err = db.QueryRow(statement, username).Scan(&userID)
 
 	if err != nil {
