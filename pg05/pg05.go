@@ -4,18 +4,17 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 
 	_ "github.com/lib/pq"
 )
 
 var (
-	Hostname = os.Getenv("PG_HOST")
+	Hostname = ""
 	Port     = 5432
-	Username = os.Getenv("PG_USER")
-	Password = os.Getenv("PG_PASS")
-	Database = os.Getenv("PG_DB")
+	Username = ""
+	Password = ""
+	Database = ""
 )
 
 type Userdata struct {
